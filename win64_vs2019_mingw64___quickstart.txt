@@ -1,0 +1,67 @@
+~~~~ Info
+Platform: Win64
+Compiler: VS2019 + MSYS2
+
+Build Environments wiki page of javacpp-presets, refered to as "original doc":
+https://github.com/bytedeco/javacpp-presets/wiki/Build-Environments
+
+~~~~ [01]
+Manually install stuff on Windows host (note: install order for first 3 may be important)...
+ - Visual Studio Community (use 2019, ensure native build tools for x64 are selected)
+ - Windows SDK
+ - CUDA
+ - MSYS2
+ - Bazel
+ - Python 3.x
+...refer to About.txt for more info, the original doc for source download links, or just Google.
+
+~~~~ [02]
+Start "win64_vs2019_mingw64.cmd" shell, ignore the header text for now [still installing stuff] but do pacman updates...
+
+pacman -Syu
+
+...restart if necessary, and repeat until no more updates.
+
+~~~~ [03] 
+Under "win64_vs2019_mingw64.cmd" shell, install prerequisites:
+
+pacman -S base-devel tar patch make git unzip zip nasm yasm pkg-config
+pacman -Su mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-i686-gcc mingw-w64-x86_64-gcc-fortran mingw-w64-i686-gcc-fortran mingw-w64-x86_64-libwinpthread-git mingw-w64-i686-libwinpthread-git
+# additional for libdav1d [av1 decoder]
+pacman -S mingw-w64-x86_64-dav1d
+
+
+
+~~~~ [04] 
+Perform a MODIFIED "Prerequisites for all platforms" section from original doc to get FF4GDX modified presets:
+
+cd _work
+git clone https://github.com/bytedeco/javacpp.git --branch 1.5.8
+git clone https://github.com/FF4GDX/javacpp-presets.git --branch 1.5.8-cosmicdan
+cd javacpp
+mvn clean install
+
+
+~~~~ [05]
+Build FF4GDX java-cpp presets. Note that the MAKEJ=8 prefix is optional, 8 for setting build threads (default is 4)
+
+cd _work
+cd javacpp-presets
+
+# optional, if rebuilding with different build preset
+MAKEJ=8 bash cppbuild.sh clean
+
+# this is quick
+mvn clean install -Djavacpp.platform=windows-x86_64 --projects .
+
+# make natives [takes some time]
+MAKEJ=8 bash cppbuild.sh -platform windows-x86_64 -extension "../ffmpeg_ff4gdx.build" install ffmpeg
+# Default build alternatives (not for FF4GDX):
+#MAKEJ=8 bash cppbuild.sh -platform windows-x86_64 install ffmpeg
+#MAKEJ=8 bash cppbuild.sh -platform windows-x86_64 -extension "../ffmpeg_default_gpl.build" install ffmpeg
+#MAKEJ=8 bash cppbuild.sh -platform windows-x86_64 -extension "../ffmpeg_minimal.build" install ffmpeg
+# make jni jar
+mvn install -Djavacpp.platform=windows-x86_64 -Djavacpp.cppbuild.skip=true --projects ffmpeg
+
+# TODO: need to copy /mingw64/bin/libdav1d.dll to libgdx /assets dir (working directory, which is wrong...)
+
